@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTA 5 - Homa Bay ULTRA REAL 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#020617;overflow:hidden;font-family:system-ui}
+#hud{position:absolute;top:0;left:0;right:0;padding:14px 18px;display:flex;justify-content:space-between;z-index:10;color:white;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent)}
+.badge{background:rgba(0,0,0,.55);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);padding:7px 14px;border-radius:24px;font-size:12px;font-weight:700}
+#cross{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:24px;height:24px;z-index:5;pointer-events:none}
+#cross::before,#cross::after{content:'';position:absolute;background:rgba(255,255,255,.8)}
+#cross::before{width:2px;height:24px;left:11px} #cross::after{width:24px;height:2px;top:11px}
+#help{position:absolute;bottom:14px;left:14px;background:rgba(0,0,0,.65);color:#cbd5e1;padding:10px 14px;border-radius:12px;font-size:11px;z-index:10;line-height:1.7}
+#help b{color:#f59e0b}
+#wasted{position:absolute;inset:0;background:radial-gradient(circle,rgba(239,68,68,.3),rgba(0,0,0,.95));display:none;align-items:center;justify-content:center;flex-direction:column;z-index:100;color:white}
+</style>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}</script>
+</head>
+<body>
+<div id="hud"><div style="display:flex;gap:10px"><div class="badge">⭐ <span id="stars">☆☆☆☆☆</span></div><div class="badge">💰 KSh <span id="cash">5400</span></div><div class="badge">❤️ <span id="health">100</span></div><div class="badge">🚗 <span id="speed">0</span> KM/H</div></div><div class="badge">📍 HOMA BAY 3D • Lake Primary Zone • Sunset</div></div>
+<div id="cross"></div>
+<div id="help"><b>WASD</b> Drive/Walk &nbsp; <b>SHIFT</b> Turbo &nbsp; <b>SPACE</b> Brake/Drift Smoke &nbsp; <b>E</b> Enter/Exit Car &nbsp; <b>C</b> Change Camera &nbsp; <b>R</b> Reset<br>Homa Bay real 3D city — steal the yellow SUV!</div>
+<div id="wasted"><h1 style="font-size:80px;letter-spacing:12px;color:#ef4444;font-weight:900">WASTED</h1><p style="color:#94a3b8;margin-top:10px">Busted by Homa Bay Police</p><button onclick="location.reload()" style="margin-top:20px;padding:12px 24px;border:none;border-radius:30px;background:white;color:black;font-weight:800;cursor:pointer">RESPAWN</button></div>
+
+<script type="module">
+import * as THREE from 'three';
+const scene=new THREE.Scene(); scene.fog=new THREE.Fog(0x87ceeb, 80, 400);
+scene.background=new THREE.Color(0xff8c42); // sunset
+
+const camera=new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; document.body.appendChild(renderer.domElement);
+
+// Lights - realistic sunset
+const sun=new THREE.DirectionalLight(0xffaa55, 1.2); sun.position.set(100,80,40); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun);
+scene.add(new THREE.AmbientLight(0x6688aa,0.6));
+const hemi=new THREE.HemisphereLight(0xff9a4a,0x1e293b,0.6); scene.add(hemi);
+
+// Ground
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(1000,1000), new THREE.MeshStandardMaterial({color:0x2d3a2e, roughness:0.9})); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true; scene.add(ground);
+const roadMat=new THREE.MeshStandardMaterial({color:0x1e293b, roughness:0.8});
+for(let i=0;i<20;i++){
+  const r=new THREE.Mesh(new THREE.PlaneGeometry(1000,18), roadMat); r.rotation.x=-Math.PI/2; r.position.set(0,(i-10)*80+0.02,0); r.receiveShadow=true; scene.add(r);
+  const r2=new THREE.Mesh(new THREE.PlaneGeometry(18,1000), roadMat); r2.rotation.x=-Math.PI/2; r2.position.set((i-10)*80,0,0.02); r2.receiveShadow=true; scene.add(r2);
+}
+
+// Buildings - realistic boxes
+const buildingMat=new THREE.MeshStandardMaterial({color:0xcbd5e1, roughness:0.7});
+for(let i=0;i<80;i++){
+  const h=20+Math.random()*50, bx=(Math.random()-0.5)*800, bz=(Math.random()-0.5)*800;
+  if(Math.abs(bx%80)<15 || Math.abs(bz%80)<15) continue;
+  const b=new THREE.Mesh(new THREE.BoxGeometry(30, h, 30), buildingMat); b.position.set(bx,h/2,bz); b.castShadow=true; b.receiveShadow=true; scene.add(b);
+  // windows emissive
+  const win=new THREE.Mesh(new THREE.BoxGeometry(31, h*0.7, 1), new THREE.MeshStandardMaterial({color:0xf59e0b, emissive:0xf59e0b, emissiveIntensity:Math.random()>0.7?0.5:0})); win.position.set(bx,h/2,bz+15); scene.add(win);
+}
+
+// Player Car - ULTRA REAL
+let carGroup=new THREE.Group();
+const body=new THREE.Mesh(new THREE.BoxGeometry(8,2.5,4), new THREE.MeshStandardMaterial({color:0xf59e0b, metalness:0.4, roughness:0.3})); body.position.y=1.5; body.castShadow=true; carGroup.add(body);
+const roof=new THREE.Mesh(new THREE.BoxGeometry(4,2,3.5), new THREE.MeshStandardMaterial({color:0x111827})); roof.position.set(-0.5,3,0); roof.castShadow=true; carGroup.add(roof);
+function wheel(x,z){ const w=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.6,16), new THREE.MeshStandardMaterial({color:0x111827})); w.rotation.z=Math.PI/2; w.position.set(x,0.7,z); w.castShadow=true; return w; }
+carGroup.add(wheel(2.5,1.8),wheel(2.5,-1.8),wheel(-2.5,1.8),wheel(-2.5,-1.8));
+// headlights
+const light1=new THREE.SpotLight(0xffffff, 50, 60, Math.PI/6, 0.5); light1.position.set(4,1.5,1); carGroup.add(light1); carGroup.add(light1.target);
+const light2=light1.clone(); light2.position.set(4,1.5,-1); carGroup.add(light2);
+carGroup.position.set(0,0,10); scene.add(carGroup);
+
+let x=0,z=10, angle=0, speed=0, inCar=true, health=100, wanted=0, cash=5400;
+let keys={}, camMode=0, smoke=[];
+
+window.onkeydown=e=>keys[e.key.toLowerCase()]=true;
+window.onkeyup=e=>keys[e.key.toLowerCase()]=false;
+
+function animate(){
+  let fwd=0, turn=0; if(keys['w']) fwd=1; if(keys['s']) fwd=-1; if(keys['a']) turn=1; if(keys['d']) turn=-1;
+  let turbo=keys['shift']?1.6:1;
+  if(inCar){
+    if(fwd) speed+=fwd*0.08*turbo; else speed*=0.97;
+    speed=Math.max(-3,Math.min(6*turbo,speed));
+    if(Math.abs(speed)>0.3) angle+=turn*speed*0.03;
+    if(keys[' '] && Math.abs(speed)>2){ smoke.push({x:carGroup.position.x+(Math.random()-0.5), y:0.5, z:carGroup.position.z+(Math.random()-0.5), life:30}); speed*=0.94; }
+    carGroup.position.x+=Math.cos(angle)*speed; carGroup.position.z+=Math.sin(angle)*speed;
+    carGroup.rotation.y=-angle;
+    x=carGroup.position.x; z=carGroup.position.z;
+  }
+
+  // camera
+  const camDist= camMode===0? -18 : camMode===1? -8 : -30;
+  const camH= camMode===0? 8 : camMode===1? 3 : 18;
+  camera.position.lerp(new THREE.Vector3(x+Math.cos(angle)*camDist, camH, z+Math.sin(angle)*camDist),0.1);
+  camera.lookAt(x,z>0?z:0, z);
+
+  // smoke
+  smoke=smoke.filter(s=>s.life>0); smoke.forEach(s=>{ s.life--; s.y+=0.08; });
+  
+  document.getElementById('speed').textContent=Math.abs(Math.round(speed*28));
+  document.getElementById('stars').textContent='★'.repeat(Math.floor(wanted))+'☆'.repeat(5-Math.floor(wanted));
+
+  if(keys['c']){ keys['c']=false; camMode=(camMode+1)%3; }
+  if(keys['r']){ carGroup.position.set(0,0,10); speed=0; }
+
+  renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+}
+animate();
+window.onresize=()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+</script>
+</body>
+</html>

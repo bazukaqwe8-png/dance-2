@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dancing Animation - Lake Homa Bay</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;background:linear-gradient(135deg,#0f172a,#1e40af,#7c3aed);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-family:system-ui;overflow:hidden;
+}
+h1{color:white;margin:20px 0 10px;font-size:24px;text-align:center}
+.controls{display:flex;gap:8px;margin:14px;flex-wrap:wrap;justify-content:center}
+.controls button{padding:8px 14px;border:none;border-radius:20px;font-weight:700;cursor:pointer;background:white;color:#1e40af;transition:.2s}
+.controls button.active{background:#f59e0b;color:#111;transform:scale(1.05)}
+.stage{width:300px;height:380px;position:relative;display:flex;align-items:end;justify-content:center}
+
+.dancer{position:relative;width:100px;height:260px;animation:bodyBounce var(--speed,0.5s) ease-in-out infinite}
+.head{width:60px;height:60px;background:#fde68a;border-radius:50%;margin:0 auto;position:relative;box-shadow:inset -6px -6px 0 rgba(0,0,0,.15)}
+.head::after{content:'😎';font-size:32px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.body{width:50px;height:70px;background:#3b82f6;border-radius:12px;margin:-4px auto 0;position:relative}
+.arm{width:14px;height:70px;background:#fde68a;position:absolute;top:0;border-radius:10px;transform-origin:top center}
+.arm.left{left:-16px;animation:leftArm var(--speed,0.5s) ease-in-out infinite}
+.arm.right{right:-16px;animation:rightArm var(--speed,0.5s) ease-in-out infinite}
+.leg{width:16px;height:80px;background:#1e293b;position:absolute;bottom:-70px;border-radius:10px;transform-origin:top center}
+.leg.left{left:10px;animation:leftLeg var(--speed,0.5s) ease-in-out infinite}
+.leg.right{right:10px;animation:rightLeg var(--speed,0.5s) ease-in-out infinite}
+
+.shadow{position:absolute;bottom:20px;width:80px;height:14px;background:rgba(0,0,0,.3);border-radius:50%;filter:blur(2px);animation:shadow var(--speed,0.5s) ease-in-out infinite}
+
+.floor{width:300px;height:8px;background:rgba(255,255,255,.2);border-radius:10px;margin-top:10px}
+
+/* ANIMATIONS */
+@keyframes bodyBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes leftArm{0%,100%{transform:rotate(-30deg)}50%{transform:rotate(140deg)}}
+@keyframes rightArm{0%,100%{transform:rotate(30deg)}50%{transform:rotate(-140deg)}}
+@keyframes leftLeg{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(20deg)}}
+@keyframes rightLeg{0%,100%{transform:rotate(10deg)}50%{transform:rotate(-20deg)}}
+@keyframes shadow{0%,100%{transform:scaleX(1)}50%{transform:scaleX(0.6)}}
+
+/* DANCE STYLES */
+.style-azonto .arm.left{animation:leftArm 0.4s infinite} .style-azonto .arm.right{animation:rightArm 0.4s infinite reverse} .style-azonto{animation:bodyBounce 0.4s infinite}
+.style-floss{--speed:0.35s} .style-floss .body{animation:flossBody 0.35s infinite}
+@keyframes flossBody{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.style-moonwalk .dancer{animation:moonwalk 2s linear infinite}
+@keyframes moonwalk{0%{transform:translateX(-80px)}50%{transform:translateX(80px)}100%{transform:translateX(-80px)}}
+
+.beat{position:absolute;width:10px;height:10px;background:#f59e0b;border-radius:50%;animation:beatPop 0.5s ease-out infinite}
+@keyframes beatPop{0%{transform:scale(0);opacity:1}100%{transform:scale(4);opacity:0}}
+</style>
+</head>
+<body>
+<h1>🕺 Dancing Animation - Lake Primary Edition 💃</h1>
+<div class="controls">
+  <button class="active" onclick="setDance('default',this)">Default Bounce</button>
+  <button onclick="setDance('azonto',this)">Azonto Fast</button>
+  <button onclick="setDance('floss',this)">Floss Dance</button>
+  <button onclick="setDance('moonwalk',this)">Moonwalk</button>
+  <button onclick="toggleMusic(this)">🔊 Music: OFF</button>
+</div>
+
+<div class="stage" id="stage">
+  <div class="dancer" id="dancer">
+    <div class="head"></div>
+    <div class="body">
+      <div class="arm left"></div>
+      <div class="arm right"></div>
+      <div class="leg left"></div>
+      <div class="leg right"></div>
+    </div>
+  </div>
+  <div class="shadow"></div>
+</div>
+<div class="floor"></div>
+<p style="color:#cbd5e1;font-size:12px;margin-top:12px">Made for Homa Bay • Press buttons to change dance • 🤑🤑🤑😲😲😟Built with HTML CSS JS</p>
+
+<script>
+let musicOn=false;
+let audioCtx;
+function setDance(name,btn){
+  const d=document.getElementById('dancer');
+  document.querySelectorAll('.controls button').forEach(b=>{if(b.textContent.includes('Music')==false) b.classList.remove('active')});
+  btn.classList.add('active');
+  d.className='dancer';
+  d.style.setProperty('--speed','0.5s');
+  if(name!=='default') d.classList.add('style-'+name);
+  if(name==='azonto') d.style.setProperty('--speed','0.35s');
+  if(name==='floss') d.style.setProperty('--speed','0.3s');
+  createBeats();
+}
+function createBeats(){
+  const stage=document.getElementById('stage');
+  for(let i=0;i<3;i++){
+    const b=document.createElement('div');
+    b.className='beat';
+    b.style.left=Math.random()*280+'px';
+    b.style.top=Math.random()*100+'px';
+    b.style.animationDelay=Math.random()*0.5+'s';
+    stage.appendChild(b);
+    setTimeout(()=>b.remove(),800);
+  }
+}
+setInterval(()=>{ if(Math.random()>0.3) createBeats(); },300);
+
+function toggleMusic(btn){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  musicOn=!musicOn;
+  btn.textContent=musicOn?'🔊 Music: ON (Beep Beat)':'🔊 Music: OFF';
+  btn.classList.toggle('active');
+  if(musicOn) playBeat();
+}
+function playBeat(){
+  if(!musicOn) return;
+  const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+  o.frequency.value=120+Math.random()*80; o.connect(g); g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.2);
+  o.start(); o.stop(audioCtx.currentTime+0.2);
+  setTimeout(playBeat, 400);
+}
+</script>
+</body>
+</html>
